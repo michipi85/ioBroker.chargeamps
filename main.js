@@ -121,6 +121,8 @@ class Chargeamps extends utils.Adapter {
 	// 	}
 	// }
 
+
+	// Login to charge amps cloud service
 	async chargeampsLogin(email, password, apiKey) {
 		adapter.log.debug("Login to Chage Amps");
 		return new Promise(function(resolve, reject) {
@@ -164,6 +166,7 @@ class Chargeamps extends utils.Adapter {
 	});
 	}
 
+	// Serialize objects into iobroker states
 	async SaveValues(key, obj) {
 		adapter.log.debug("SaveValues");
 
@@ -221,6 +224,7 @@ class Chargeamps extends utils.Adapter {
 		}   
 	}
 
+	// Get current chargepoint status in an interval
 	async RefreshChargepoints()
 	{
 		adapter.log.debug("RefreshChargepoints");
@@ -237,6 +241,7 @@ class Chargeamps extends utils.Adapter {
 	}
 	}
 
+	// Get owned chargepoints, settings, etc. Automatically called after login
 	async chargeampsGetOwnedChargepoints() {
 		adapter.log.debug("GetOwnedChargepoints");
 		const options = {
@@ -275,6 +280,7 @@ class Chargeamps extends utils.Adapter {
 		});
 	}
 
+	// Get connector settings
 	async chargeampsGetConnectorSettings(chargepointId, connectorId) {
 		adapter.log.debug("chargeampsGetConnectorSettings");
 		const options = {
@@ -299,6 +305,7 @@ class Chargeamps extends utils.Adapter {
 		});
 	}
 
+	// Get chargepoint settings
 	async chargeampsGetChargepointSettings(id) {
 		adapter.log.debug("chargeampsGetChargepointSettings");
 		const options = {
@@ -323,6 +330,7 @@ class Chargeamps extends utils.Adapter {
 		});
 	}
 
+	// Get chargepoint schedules
 	async chargeampsGetChargepointSchedules(id) {
 		adapter.log.debug("chargeampsGetChargepointSchedules");
 		const options = {
@@ -349,6 +357,7 @@ class Chargeamps extends utils.Adapter {
 		});
 	}
 
+	// Get chargepoint charging sessions
 	async chargeampsGetChargepointChargingSessions(id) {
 		adapter.log.debug("chargeampsGetChargepointChargingSessions");
 
@@ -364,11 +373,14 @@ class Chargeamps extends utils.Adapter {
 			native: {},
 		});
 
+		// To prevent syncing all charging sessions, we only sync from Last Sync Date
 		adapter.getStateAsync(id+".chargingsessions.LastSyncDate", function (err, state) {
 
 			if (state==null) {
+				// If no last sync date is set, we set it to 1st of January 2000
 				adapter.LastSyncDate = "2000-01-01T00:00:00.000Z";
 			} else {
+				// Get stored date
 				adapter.LastSyncDate = state.val;
 			}
 			adapter.log.debug("chargeampsGetChargepointChargingSessions: sync from "+adapter.LastSyncDate);
@@ -391,11 +403,15 @@ class Chargeamps extends utils.Adapter {
 				adapter.log.debug("chargeampsGetChargepointChargingSessions: Response:" + JSON.stringify(response));
 				if (adapter.statuscode == 200) {
 					adapter.log.debug("Body: " + JSON.stringify(body));
+					
+					// Get latest charging session date
 					for(let x = 0; x < body.length; x++) {
 						if (adapter.LastSyncDate < new Date(body[x].startTime)) {
 							adapter.LastSyncDate = new Date(body[x].startTime);
 						}
 					}
+
+					// Save LastSyncDate to latest charging session date
 					adapter.setObjectNotExistsAsync(id+".chargingsessions.LastSyncDate", {
 						type: "state",
 						common: {
@@ -420,6 +436,7 @@ class Chargeamps extends utils.Adapter {
 		});
 	}
 
+	// Get Chargepoint status
 	async chargeampsGetChargepointStatus(id) {
 		adapter.log.debug("chargeampsGetChargepointStatus for "+id);
 		const options = {
@@ -443,6 +460,8 @@ class Chargeamps extends utils.Adapter {
 					let ChargePointId = body.connectorStatuses[x].chargePointId;
 					let ConnectorId = body.connectorStatuses[x].connectorId;
 					if(body.connectorStatuses[x].measurements==null) {
+
+						// If no measurements exists, set all values to 0 to reflect end of charging
 						adapter.log.debug("No measurements, set to 0");
 						body.connectorStatuses[x].measurements = [];
 						body.connectorStatuses[x].measurements.push({"phase": "L1", "current": "0", "voltage": "0"});
