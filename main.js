@@ -50,7 +50,7 @@ class Chargeamps extends utils.Adapter {
 			adapter.log.debug("Started Charge Amps Adapter and logged in successfully");
 		});
 
-		const refreshIntervalObject = setInterval(adapter.RefreshChargepoints, 30000);
+		const refreshIntervalObject = setInterval(adapter.RefreshChargepoints, this.config.Interval*1000);
 	}
 
 	/**

@@ -73,7 +73,8 @@
 	"native": {
 		"email": "",
 		"password": "",
-		"apikey": ""
+		"apikey": "",
+		"Interval": 30
 	},
 	"objects": [],
 	"instanceObjects": []
