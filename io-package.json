@@ -1,0 +1,80 @@
+{
+	"common": {
+		"name": "chargeamps",
+		"version": "0.0.1",
+		"news": {
+			"0.0.1": {
+				"en": "initial release",
+				"de": "Erstveröffentlichung",
+				"ru": "Начальная версия",
+				"pt": "lançamento inicial",
+				"nl": "Eerste uitgave",
+				"fr": "Première version",
+				"it": "Versione iniziale",
+				"es": "Versión inicial",
+				"pl": "Pierwsze wydanie",
+				"zh-cn": "首次出版"
+			}
+		},
+		"title": "Charge Amps",
+		"titleLang": {
+			"en": "Charge Amps",
+			"de": "Charge Amps",
+			"ru": "Charge Amps",
+			"pt": "Charge Amps",
+			"nl": "Charge Amps",
+			"fr": "Charge Amps",
+			"it": "Charge Amps",
+			"es": "Charge Amps",
+			"pl": "Charge Amps",
+			"zh-cn": "Charge Amps"
+		},
+		"desc": {
+			"en": "Query and control your Charge Amps wallbox",
+			"de": "Fragen Sie Ihre Ladestrom-Wallbox ab und steuern Sie sie",
+			"ru": "Запрашивайте и управляйте своим настенным боксом Charge Amps",
+			"pt": "Consulte e controle sua wallbox Charge Amps",
+			"nl": "Vraag uw Charge Amps-wallbox op en bedien deze",
+			"fr": "Interrogez et contrôlez votre wallbox Charge Amps",
+			"it": "Interroga e controlla la tua wallbox Charge Amps",
+			"es": "Consulta y controla tu Wallbox de Charge Amps",
+			"pl": "Przeszukuj i kontroluj swoją skrzynkę ładowania Charge Amps",
+			"zh-cn": "查询和控制您的 Charge Amps 墙盒"
+		},
+		"authors": ["Stefan Dörr <doerrst@web.de>"],
+		"keywords": ["charge amps", "wallbox", "halo"],
+		"license": "MIT",
+		"platform": "Javascript/Node.js",
+		"main": "main.js",
+		"icon": "chargeamps.png",
+		"enabled": true,
+		"extIcon": "https://raw.githubusercontent.com/DoerrSt/ioBroker.chargeamps/main/admin/chargeamps.png",
+		"readme": "https://github.com/DoerrSt/ioBroker.chargeamps/blob/main/README.md",
+		"loglevel": "info",
+		"mode": "daemon",
+		"type": "misc-data",
+		"compact": true,
+		"connectionType": "cloud",
+		"dataSource": "poll",
+		"adminUI": {
+			"config": "json"
+		},
+		"dependencies": [
+			{
+				"js-controller": ">=3.3.22"
+			}
+		],
+		"globalDependencies": [
+			{
+				"admin": ">=5.1.13"
+			}
+		]
+	},
+	"native": {
+		"email": "",
+		"password": "",
+		"apikey": ""
+	},
+	"objects": [],
+	"instanceObjects": []
+}
