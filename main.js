@@ -19,6 +19,7 @@ let refreshIntervalObject;
 let logged_in = false;
 let LastSyncDate;
 let adapter;
+let RefreshInterval = 30;
 
 class Chargeamps extends utils.Adapter {
 	/**
@@ -45,14 +46,18 @@ class Chargeamps extends utils.Adapter {
 		adapter.log.debug("email:" + this.config.email);
 		adapter.log.debug("password: ****");
 		adapter.log.debug("api-key:" + this.config.apikey);
+		adapter.RefreshInterval = this.config.Interval;
+		adapter.log.info("Refresh Interval: "+adapter.RefreshInterval);
 
 		await adapter.chargeampsLogin(this.config.email, this.config.password, this.config.apikey).then(() => {
 			adapter.log.debug("Started Charge Amps Adapter and logged in successfully");
 		});
 
-		let interval = this.config.Interval;
-		if(interval < 15) interval = 15;
-		const refreshIntervalObject = setInterval(adapter.RefreshChargepoints, interval);
+		if(adapter.RefreshInterval  < 15) {
+			adapter.RefreshInterval = 15;
+			adapter.log.info("Refresh Interval is too low. Set to 15 seconds");
+		} 
+		const refreshIntervalObject = setInterval(adapter.RefreshChargepoints, adapter.RefreshInterval*1000);
 	}
 
 	/**

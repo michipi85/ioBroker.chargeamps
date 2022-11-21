@@ -16,6 +16,11 @@
 			"type": "text",
 			"label": "API-Key",
 			"newLine": true
+		},
+		"Interval": {
+			"type": "text",
+			"label": "Refresh Interval",
+			"newLine": true
 		}
 	}
 }
