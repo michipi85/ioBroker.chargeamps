@@ -64,7 +64,7 @@ class Chargeamps extends utils.Adapter {
 			adapter.RefreshInterval = 15;
 			adapter.log.info("Refresh Interval is too low. Set to 15 seconds");
 		}
-		const refreshIntervalObject = setInterval(adapter.RefreshChargepoints, adapter.RefreshInterval * 1000);
+		adapter.refreshIntervalObject = setInterval(adapter.RefreshChargepoints, adapter.RefreshInterval * 1000);
 	}
 
 	/**
