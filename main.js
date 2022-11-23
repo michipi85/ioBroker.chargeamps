@@ -103,10 +103,10 @@ class Chargeamps extends utils.Adapter {
 	onStateChange(id, state) {
 		if (state) {
 			// The state was changed
-			adapter.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
+			// adapter.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
 		} else {
 			// The state was deleted
-			adapter.log.info(`state ${id} deleted`);
+			// adapter.log.info(`state ${id} deleted`);
 		}
 	}
 
