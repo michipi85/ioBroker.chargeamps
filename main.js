@@ -187,229 +187,98 @@ class Chargeamps extends utils.Adapter {
 	async SaveValues(key, obj) {
 		adapter.log.debug("SaveValues");
 
-		let keys = Object.getOwnPropertyNames(obj);
+		try {
+			let keys = Object.getOwnPropertyNames(obj);
 
-		adapter.setObjectNotExistsAsync(key, {
-			type: "folder",
-			common: {
-				name: key,
+			adapter.setObjectNotExistsAsync(key, {
 				type: "folder",
-			},
-			native: {},
-		});
+				common: {
+					name: key,
+					type: "folder",
+				},
+				native: {},
+			});
 
-		let v;
-		for(let i = 0; i < keys.length; i++) {
-			if(obj[keys[i]] != null && obj[keys[i]] != undefined) {
-				if(typeof obj[keys[i]] === 'object') {
-					adapter.log.debug("Object found");
-					adapter.SaveValues(key + "." + keys[i], obj[keys[i]]);
-				}
-				else {
-					let type = "";
-					if(isNaN(obj[keys[i]])) {
-						type = "string"
-						v = obj[keys[i]];
-					}
-					else if(typeof obj[keys[i]] == "boolean") {
-						type = "boolean";
-						if(obj[keys[i]] === 'true') {
-							v = true;
-						}
-						else {
-							v = false;
-						}
+			let v;
+			for(let i = 0; i < keys.length; i++) {
+				if(obj[keys[i]] != null && obj[keys[i]] != undefined) {
+					if(typeof obj[keys[i]] === 'object') {
+						adapter.log.debug("Object found");
+						adapter.SaveValues(key + "." + keys[i], obj[keys[i]]);
 					}
 					else {
-						type = "number"
-						v = parseFloat(obj[keys[i]]);
-					};
+						let type = "";
+						if(isNaN(obj[keys[i]])) {
+							type = "string"
+							v = obj[keys[i]];
+						}
+						else if(typeof obj[keys[i]] == "boolean") {
+							type = "boolean";
+							if(obj[keys[i]] === 'true') {
+								v = true;
+							}
+							else {
+								v = false;
+							}
+						}
+						else {
+							type = "number"
+							v = parseFloat(obj[keys[i]]);
+						};
 
-					adapter.log.debug("Key: " + keys[i] + ", Value: " + obj[keys[i]] + ", Type: " + type);
-					await adapter.setObjectNotExistsAsync(key + "." + keys[i], {
-						type: "state",
-						common: {
-							name: keys[i],
-							role: "value",
-							read: true,
-							write: true,
-							type: type,
-						},
-						native: {},
-					});
-					adapter.setState(key + "." + keys[i], {
-						val: v,
-						ack: true
-					});
+						adapter.log.debug("Key: " + keys[i] + ", Value: " + obj[keys[i]] + ", Type: " + type);
+						await adapter.setObjectNotExistsAsync(key + "." + keys[i], {
+							type: "state",
+							common: {
+								name: keys[i],
+								role: "value",
+								read: true,
+								write: true,
+								type: type,
+							},
+							native: {},
+						});
+						adapter.setState(key + "." + keys[i], {
+							val: v,
+							ack: true
+						});
+					}
 				}
 			}
+		}
+		catch (error) {
+			adapter.log.error(error);
 		}
 	}
 
 	// Get current chargepoint status in an interval
 	async RefreshChargepoints() {
-		adapter.log.debug("RefreshChargepoints");
-		if(adapter.logged_in) {
-			adapter.log.debug("Chargepoints: " + adapter.chargepoints.length);
-			for(let x = 0; x < adapter.chargepoints.length; x++) {
-				await adapter.chargeampsGetChargepointStatus(adapter.chargepoints[x]);
-				if(adapter.statuscode == 401) {
-					adapter.log.debug("Token expired, refreshing");
-					adapter.logged_in = false;
-					var result = await adapter.chargeampsLogin(adapter.email, adapter.password, adapter.apiKey);
+		try {
+			adapter.log.debug("RefreshChargepoints");
+			if(adapter.logged_in) {
+				adapter.log.debug("Chargepoints: " + adapter.chargepoints.length);
+				for(let x = 0; x < adapter.chargepoints.length; x++) {
+					await adapter.chargeampsGetChargepointStatus(adapter.chargepoints[x]);
+					if(adapter.statuscode == 401) {
+						adapter.log.debug("Token expired, refreshing");
+						adapter.logged_in = false;
+						var result = await adapter.chargeampsLogin(adapter.email, adapter.password, adapter.apiKey);
+					}
 				}
 			}
+		}
+		catch (error) {
+			adapter.log.error(error);
 		}
 	}
 
 	// Get owned chargepoints, settings, etc. Automatically called after login
 	async chargeampsGetOwnedChargepoints() {
 		adapter.log.debug("GetOwnedChargepoints");
-		const options = {
-			method: "GET",
-			url: "https://eapi.charge.space/api/v4/chargepoints/owned",
-			headers: {
-				"Content-Type": "application/json",
-				apiKey: adapter.apiKey,
-				Authorization: "Bearer " + adapter.token,
-			},
-			json: true,
-		};
-		adapter.log.debug("Options:" + JSON.stringify(options));
-		request(options, (error, response, body) => {
-			adapter.statuscode = response.statusCode;
-			adapter.log.debug("Statuscode: " + adapter.statuscode);
-			adapter.log.debug("Response:" + JSON.stringify(response));
-			if(adapter.statuscode == 200) {
-				adapter.log.debug("Body: " + JSON.stringify(body));
-				adapter.log.debug("Chargepoints:" + body.length);
-
-				// Refresh chargepoints
-				adapter.chargepoints = [];
-				for(let x = 0; x < body.length; x++) {
-					adapter.chargepoints.push(body[x].id);
-					adapter.SaveValues(body[x].name, body[x]);
-					adapter.chargeampsGetChargepointSettings(body[x].id);
-					adapter.chargeampsGetChargepointStatus(body[x].id);
-					adapter.chargeampsGetChargepointSchedules(body[x].id);
-					adapter.chargeampsGetChargepointChargingSessions(body[x].id);
-					for(let y = 0; y < body[x].connectors.length; y++) {
-						adapter.chargeampsGetConnectorSettings(body[x].id, body[x].connectors[y].connectorId);
-					}
-				}
-			}
-		});
-	}
-
-	// Get connector settings
-	async chargeampsGetConnectorSettings(chargepointId, connectorId) {
-		adapter.log.debug("chargeampsGetConnectorSettings");
-		const options = {
-			method: "GET",
-			url: "https://eapi.charge.space/api/v4/chargepoints/" + chargepointId + "/connectors/" + connectorId + "/settings",
-			headers: {
-				"Content-Type": "application/json",
-				apiKey: adapter.apiKey,
-				Authorization: "Bearer " + adapter.token,
-			},
-			json: true,
-		};
-		adapter.log.debug("Options:" + JSON.stringify(options));
-		request(options, (error, response, body) => {
-			adapter.statuscode = response.statusCode;
-			adapter.log.debug("Statuscode: " + adapter.statuscode);
-			adapter.log.debug("Response:" + JSON.stringify(response));
-			if(adapter.statuscode == 200) {
-				adapter.log.debug("Body: " + JSON.stringify(body));
-				adapter.SaveValues(chargepointId + ".connectors.settings." + connectorId, body);
-			}
-		});
-	}
-
-	// Get chargepoint settings
-	async chargeampsGetChargepointSettings(id) {
-		adapter.log.debug("chargeampsGetChargepointSettings");
-		const options = {
-			method: "GET",
-			url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/settings",
-			headers: {
-				"Content-Type": "application/json",
-				apiKey: adapter.apiKey,
-				Authorization: "Bearer " + adapter.token,
-			},
-			json: true,
-		};
-		adapter.log.debug("Options:" + JSON.stringify(options));
-		request(options, (error, response, body) => {
-			adapter.statuscode = response.statusCode;
-			adapter.log.debug("Statuscode: " + adapter.statuscode);
-			adapter.log.debug("Response:" + JSON.stringify(response));
-			if(adapter.statuscode == 200) {
-				adapter.log.debug("Body: " + JSON.stringify(body));
-				adapter.SaveValues(id + ".settings", body);
-			}
-		});
-	}
-
-	// Get chargepoint schedules
-	async chargeampsGetChargepointSchedules(id) {
-		adapter.log.debug("chargeampsGetChargepointSchedules");
-		const options = {
-			method: "GET",
-			url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/schedules",
-			headers: {
-				"Content-Type": "application/json",
-				apiKey: adapter.apiKey,
-				Authorization: "Bearer " + adapter.token,
-			},
-			json: true,
-		};
-		adapter.log.debug("Options:" + JSON.stringify(options));
-		request(options, (error, response, body) => {
-			adapter.statuscode = response.statusCode;
-			adapter.log.debug("Statuscode: " + adapter.statuscode);
-			adapter.log.debug("Response:" + JSON.stringify(response));
-			if(adapter.statuscode == 200) {
-				adapter.log.debug("Body: " + JSON.stringify(body));
-				for(let x = 0; x < body.length; x++) {
-					adapter.SaveValues(id + ".schedules." + body[x].id, body[x]);
-				}
-			}
-		});
-	}
-
-	// Get chargepoint charging sessions
-	async chargeampsGetChargepointChargingSessions(id) {
-		adapter.log.debug("chargeampsGetChargepointChargingSessions");
-
-		await adapter.setObjectNotExistsAsync(id + ".chargingsessions.LastSyncDate", {
-			type: "state",
-			common: {
-				name: LastSyncDate,
-				role: "value",
-				read: true,
-				write: true,
-				type: "string",
-			},
-			native: {},
-		});
-
-		// To prevent syncing all charging sessions, we only sync from Last Sync Date
-		adapter.getStateAsync(id + ".chargingsessions.LastSyncDate", function (err, state) {
-
-			if(state == null) {
-				// If no last sync date is set, we set it to 1st of January 2000
-				adapter.LastSyncDate = "2000-01-01T00:00:00.000Z";
-			}
-			else {
-				// Get stored date
-				adapter.LastSyncDate = state.val;
-			}
-			adapter.log.debug("chargeampsGetChargepointChargingSessions: sync from " + adapter.LastSyncDate);
-
+		try {
 			const options = {
 				method: "GET",
-				url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/chargingsessions?startTime=" + adapter.LastSyncDate,
+				url: "https://eapi.charge.space/api/v4/chargepoints/owned",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
@@ -417,99 +286,269 @@ class Chargeamps extends utils.Adapter {
 				},
 				json: true,
 			};
-
-			adapter.log.debug("chargeampsGetChargepointChargingSessions: Options:" + JSON.stringify(options));
+			adapter.log.debug("Options:" + JSON.stringify(options));
 			request(options, (error, response, body) => {
 				adapter.statuscode = response.statusCode;
-				adapter.log.debug("chargeampsGetChargepointChargingSessions: Statuscode: " + adapter.statuscode);
-				adapter.log.debug("chargeampsGetChargepointChargingSessions: Response:" + JSON.stringify(response));
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
 				if(adapter.statuscode == 200) {
 					adapter.log.debug("Body: " + JSON.stringify(body));
+					adapter.log.debug("Chargepoints:" + body.length);
 
-					// Get latest charging session date
+					// Refresh chargepoints
+					adapter.chargepoints = [];
 					for(let x = 0; x < body.length; x++) {
-						if(adapter.LastSyncDate < new Date(body[x].startTime)) {
-							adapter.LastSyncDate = new Date(body[x].startTime);
+						adapter.chargepoints.push(body[x].id);
+						adapter.SaveValues(body[x].name, body[x]);
+						adapter.chargeampsGetChargepointSettings(body[x].id);
+						adapter.chargeampsGetChargepointStatus(body[x].id);
+						adapter.chargeampsGetChargepointSchedules(body[x].id);
+						adapter.chargeampsGetChargepointChargingSessions(body[x].id);
+						for(let y = 0; y < body[x].connectors.length; y++) {
+							adapter.chargeampsGetConnectorSettings(body[x].id, body[x].connectors[y].connectorId);
 						}
 					}
-
-					// Save LastSyncDate to latest charging session date
-					adapter.setObjectNotExistsAsync(id + ".chargingsessions.LastSyncDate", {
-						type: "state",
-						common: {
-							name: "LastSyncDate",
-							role: "value",
-							read: true,
-							write: true,
-							type: "string",
-						},
-						native: {},
-					});
-
-					adapter.setState(id + ".chargingsessions.LastSyncDate", {
-						val: adapter.LastSyncDate,
-						ack: true
-					});
-				}
-
-				for(let x = 0; x < body.length; x++) {
-					adapter.SaveValues(id + ".chargingsessions." + body[x].id, body[x]);
 				}
 			});
+		}
+		catch (error) {
+			adapter.log.error(error);
+		}
+	}
+
+	// Get connector settings
+	async chargeampsGetConnectorSettings(chargepointId, connectorId) {
+		try {
+			adapter.log.debug("chargeampsGetConnectorSettings");
+			const options = {
+				method: "GET",
+				url: "https://eapi.charge.space/api/v4/chargepoints/" + chargepointId + "/connectors/" + connectorId + "/settings",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: adapter.apiKey,
+					Authorization: "Bearer " + adapter.token,
+				},
+				json: true,
+			};
+			adapter.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				adapter.statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if(adapter.statuscode == 200) {
+					adapter.log.debug("Body: " + JSON.stringify(body));
+					adapter.SaveValues(chargepointId + ".connectors.settings." + connectorId, body);
+				}
+			});
+		}
+		catch (error) {
+			adapter.log.error(error);
+		}
+	}
+
+	// Get chargepoint settings
+	async chargeampsGetChargepointSettings(id) {
+		adapter.log.debug("chargeampsGetChargepointSettings");
+		try {
+			const options = {
+				method: "GET",
+				url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/settings",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: adapter.apiKey,
+					Authorization: "Bearer " + adapter.token,
+				},
+				json: true,
+			};
+			adapter.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				adapter.statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if(adapter.statuscode == 200) {
+					adapter.log.debug("Body: " + JSON.stringify(body));
+					adapter.SaveValues(id + ".settings", body);
+				}
+			});
+		}
+		catch (error) {
+			adapter.log.error(error);
+		}
+	}
+
+	// Get chargepoint schedules
+	async chargeampsGetChargepointSchedules(id) {
+		adapter.log.debug("chargeampsGetChargepointSchedules");
+		try {
+			const options = {
+				method: "GET",
+				url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/schedules",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: adapter.apiKey,
+					Authorization: "Bearer " + adapter.token,
+				},
+				json: true,
+			};
+			adapter.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				adapter.statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if(adapter.statuscode == 200) {
+					adapter.log.debug("Body: " + JSON.stringify(body));
+					for(let x = 0; x < body.length; x++) {
+						adapter.SaveValues(id + ".schedules." + body[x].id, body[x]);
+					}
+				}
+			});
+		}
+		catch (error) {
+			adapter.log.error(error);
+		}
+	}
+
+	// Get chargepoint charging sessions
+	async chargeampsGetChargepointChargingSessions(id) {
+		adapter.log.debug("chargeampsGetChargepointChargingSessions");
+		try {
+			await adapter.setObjectNotExistsAsync(id + ".chargingsessions.LastSyncDate", {
+				type: "state",
+				common: {
+					name: LastSyncDate,
+					role: "value",
+					read: true,
+					write: true,
+					type: "string",
+				},
+				native: {},
+			});
+
+			// To prevent syncing all charging sessions, we only sync from Last Sync Date
+			adapter.getStateAsync(id + ".chargingsessions.LastSyncDate", function (err, state) {
+
+				if(state == null) {
+					// If no last sync date is set, we set it to 1st of January 2000
+					adapter.LastSyncDate = "2000-01-01T00:00:00.000Z";
+				}
+				else {
+					// Get stored date
+					adapter.LastSyncDate = state.val;
+				}
+				adapter.log.debug("chargeampsGetChargepointChargingSessions: sync from " + adapter.LastSyncDate);
+
+				const options = {
+					method: "GET",
+					url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/chargingsessions?startTime=" + adapter.LastSyncDate,
+					headers: {
+						"Content-Type": "application/json",
+						apiKey: adapter.apiKey,
+						Authorization: "Bearer " + adapter.token,
+					},
+					json: true,
+				};
+
+				adapter.log.debug("chargeampsGetChargepointChargingSessions: Options:" + JSON.stringify(options));
+				request(options, (error, response, body) => {
+					adapter.statuscode = response.statusCode;
+					adapter.log.debug("chargeampsGetChargepointChargingSessions: Statuscode: " + adapter.statuscode);
+					adapter.log.debug("chargeampsGetChargepointChargingSessions: Response:" + JSON.stringify(response));
+					if(adapter.statuscode == 200) {
+						adapter.log.debug("Body: " + JSON.stringify(body));
+
+						// Get latest charging session date
+						for(let x = 0; x < body.length; x++) {
+							if(adapter.LastSyncDate < new Date(body[x].startTime)) {
+								adapter.LastSyncDate = new Date(body[x].startTime);
+							}
+						}
+
+						// Save LastSyncDate to latest charging session date
+						adapter.setObjectNotExistsAsync(id + ".chargingsessions.LastSyncDate", {
+							type: "state",
+							common: {
+								name: "LastSyncDate",
+								role: "value",
+								read: true,
+								write: true,
+								type: "string",
+							},
+							native: {},
+						});
+
+						adapter.setState(id + ".chargingsessions.LastSyncDate", {
+							val: adapter.LastSyncDate,
+							ack: true
+						});
+					}
+
+					for(let x = 0; x < body.length; x++) {
+						adapter.SaveValues(id + ".chargingsessions." + body[x].id, body[x]);
+					}
+				});
 
 
-		});
+			});
+		}
+		catch (error) {
+			adapter.log.error(error);
+		}
 	}
 
 	// Get Chargepoint status
 	async chargeampsGetChargepointStatus(id) {
 		adapter.log.debug("chargeampsGetChargepointStatus for " + id);
-		const options = {
-			method: "GET",
-			url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/status",
-			headers: {
-				"Content-Type": "application/json",
-				apiKey: adapter.apiKey,
-				Authorization: "Bearer " + adapter.token,
-			},
-			json: true,
-		};
-		adapter.log.debug("Options:" + JSON.stringify(options));
-		request(options, (error, response, body) => {
-			statuscode = response.statusCode;
-			adapter.log.debug("Statuscode: " + adapter.statuscode);
-			adapter.log.debug("Response:" + JSON.stringify(response));
-			if(adapter.statuscode == 200) {
-				adapter.log.debug("Body: " + JSON.stringify(body));
-				for(let x = 0; x < body.connectorStatuses.length; x++) {
-					let ChargePointId = body.connectorStatuses[x].chargePointId;
-					let ConnectorId = body.connectorStatuses[x].connectorId;
-					if(body.connectorStatuses[x].measurements == null) {
+		try {
+			const options = {
+				method: "GET",
+				url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/status",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: adapter.apiKey,
+					Authorization: "Bearer " + adapter.token,
+				},
+				json: true,
+			};
+			adapter.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if(adapter.statuscode == 200) {
+					adapter.log.debug("Body: " + JSON.stringify(body));
+					for(let x = 0; x < body.connectorStatuses.length; x++) {
+						let ChargePointId = body.connectorStatuses[x].chargePointId;
+						let ConnectorId = body.connectorStatuses[x].connectorId;
+						if(body.connectorStatuses[x].measurements == null) {
 
-						// If no measurements exists, set all values to 0 to reflect end of charging
-						adapter.log.debug("No measurements, set to 0");
-						body.connectorStatuses[x].measurements = [];
-						body.connectorStatuses[x].measurements.push({
-							"phase": "L1",
-							"current": "0",
-							"voltage": "0"
-						});
-						body.connectorStatuses[x].measurements.push({
-							"phase": "L2",
-							"current": "0",
-							"voltage": "0"
-						});
-						body.connectorStatuses[x].measurements.push({
-							"phase": "L3",
-							"current": "0",
-							"voltage": "0"
-						});
+							// If no measurements exists, set all values to 0 to reflect end of charging
+							adapter.log.debug("No measurements, set to 0");
+							body.connectorStatuses[x].measurements = [];
+							body.connectorStatuses[x].measurements.push({
+								"phase": "L1",
+								"current": "0",
+								"voltage": "0"
+							});
+							body.connectorStatuses[x].measurements.push({
+								"phase": "L2",
+								"current": "0",
+								"voltage": "0"
+							});
+							body.connectorStatuses[x].measurements.push({
+								"phase": "L3",
+								"current": "0",
+								"voltage": "0"
+							});
+						}
+						adapter.log.debug("Save values :" + body.connectorStatuses[x].measurements[0].current + " / " + body.connectorStatuses[x].measurements[1].current + " / " + +body.connectorStatuses[x].measurements[2].current);
+						adapter.SaveValues(id + ".connectors.status." + ConnectorId, body.connectorStatuses[x]);
 					}
-					adapter.log.debug("Save values :" + body.connectorStatuses[x].measurements[0].current + " / " + body.connectorStatuses[x].measurements[1].current + " / " + +body.connectorStatuses[x].measurements[2].current);
-					adapter.SaveValues(id + ".connectors.status." + ConnectorId, body.connectorStatuses[x]);
 				}
-			}
-		});
+			});
+		}
+		catch (error) {
+			adapter.log.error(error);
+		}
 	}
 }
 
