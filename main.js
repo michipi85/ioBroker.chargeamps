@@ -103,7 +103,7 @@ class Chargeamps extends utils.Adapter {
 	onStateChange(id, state) {
 		if (state) {
 			// The state was changed
-			//adapter.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
+			adapter.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
 		} else {
 			// The state was deleted
 			adapter.log.info(`state ${id} deleted`);
@@ -301,7 +301,7 @@ class Chargeamps extends utils.Adapter {
 
 	async CreateControlStates(id) {
 		// Create dummy control objects
-		adapter.setObjectNotExistsAsync(id + ".Control", {
+		await adapter.setObjectNotExistsAsync(id + ".Control", {
 			type: "folder",
 			common: {
 				name: "Control",
@@ -311,7 +311,7 @@ class Chargeamps extends utils.Adapter {
 			},
 			native: {},
 		});
-		adapter.setObjectNotExistsAsync(id + ".Control.Reboot", {
+		await adapter.setObjectNotExistsAsync(id + ".Control.Reboot", {
 			type: "state",
 			common: {
 				name: "Reboot",
@@ -322,8 +322,8 @@ class Chargeamps extends utils.Adapter {
 			},
 			native: {},
 		});
-		adapter.setState(id + ".Control.Reboot", { val: false, ack: true });
-		adapter.setObjectNotExistsAsync(id + ".Control.RemoteStart", {
+		await adapter.setState(id + ".Control.Reboot", { val: false, ack: true });
+		await adapter.setObjectNotExistsAsync(id + ".Control.RemoteStart", {
 			type: "state",
 			common: {
 				name: "Reboot",
@@ -334,8 +334,8 @@ class Chargeamps extends utils.Adapter {
 			},
 			native: {},
 		});
-		adapter.setState(id + ".Control.RemoteStart", { val: false, ack: true });
-		adapter.setObjectNotExistsAsync(id + ".Control.RemoteStop", {
+		await adapter.setState(id + ".Control.RemoteStart", { val: false, ack: true });
+		await adapter.setObjectNotExistsAsync(id + ".Control.RemoteStop", {
 			type: "state",
 			common: {
 				name: "Reboot",
@@ -346,8 +346,8 @@ class Chargeamps extends utils.Adapter {
 			},
 			native: {},
 		});
-		adapter.setState(id + ".Control.RemoteStop", { val: false, ack: true });
-		adapter.setObjectNotExistsAsync(id + ".EnableCallbacks", {
+		await adapter.setState(id + ".Control.RemoteStop", { val: false, ack: true });
+		await adapter.setObjectNotExistsAsync(id + ".Control.EnableCallbacks", {
 			type: "state",
 			common: {
 				name: "Reboot",
@@ -358,8 +358,8 @@ class Chargeamps extends utils.Adapter {
 			},
 			native: {},
 		});
-		adapter.setState(id + ".Control.EnableCallbacks", { val: false, ack: true });
-		adapter.setObjectNotExistsAsync(id + ".DisableCallbacks", {
+		await adapter.setState(id + ".Control.EnableCallbacks", { val: false, ack: true });
+		await adapter.setObjectNotExistsAsync(id + ".Control.DisableCallbacks", {
 			type: "state",
 			common: {
 				name: "Reboot",
@@ -370,7 +370,7 @@ class Chargeamps extends utils.Adapter {
 			},
 			native: {},
 		});
-		adapter.setState(id + ".Control.DisableCallbacks", { val: false, ack: true });
+		await adapter.setState(id + ".Control.DisableCallbacks", { val: false, ack: true });
 	}
 
 	async reboot() {
