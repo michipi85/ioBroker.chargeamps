@@ -3,29 +3,23 @@
 /*
  * Created with @iobroker/create-adapter v2.3.0
  * ioBroker Adapter to connect to a Charge Amps wallbox
- * 
+ *
  */
 
 const utils = require("@iobroker/adapter-core");
-const {
-	resolve
-} = require("path");
+const { resolve } = require("path");
 const request = require("request");
-const {
-	isArray
-} = require("util");
-const {
-	isNumberObject
-} = require("util/types");
+const { isArray } = require("util");
+const { isNumberObject } = require("util/types");
 
-let token = "";
-let chargepoints = [];
+const token = "";
+const chargepoints = [];
 let statuscode = 0;
 let refreshIntervalObject;
-let logged_in = false;
+const logged_in = false;
 let LastSyncDate;
 let adapter;
-let RefreshInterval = 30;
+const RefreshInterval = 30;
 
 class Chargeamps extends utils.Adapter {
 	/**
@@ -48,7 +42,6 @@ class Chargeamps extends utils.Adapter {
 	 * Is called when databases are connected and adapter received configuration.
 	 */
 	async onReady() {
-
 		adapter.log.debug("email:" + this.config.email);
 		adapter.log.debug("password: ****");
 		adapter.log.debug("api-key:" + this.config.apikey);
@@ -60,7 +53,7 @@ class Chargeamps extends utils.Adapter {
 			adapter.log.debug("Started Charge Amps Adapter and logged in successfully");
 		});
 
-		if(adapter.RefreshInterval < 15) {
+		if (adapter.RefreshInterval < 15) {
 			adapter.RefreshInterval = 15;
 			adapter.log.info("Refresh Interval is too low. Set to 15 seconds");
 		}
@@ -80,8 +73,7 @@ class Chargeamps extends utils.Adapter {
 			// clearInterval(interval1);
 			adapter.clearInterval(adapter.refreshIntervalObject);
 			callback();
-		}
-		catch (e) {
+		} catch (e) {
 			callback();
 		}
 	}
@@ -109,11 +101,10 @@ class Chargeamps extends utils.Adapter {
 	 * @param {ioBroker.State | null | undefined} state
 	 */
 	onStateChange(id, state) {
-		if(state) {
+		if (state) {
 			// The state was changed
-			adapter.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
-		}
-		else {
+			//adapter.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
+		} else {
 			// The state was deleted
 			adapter.log.info(`state ${id} deleted`);
 		}
@@ -137,7 +128,6 @@ class Chargeamps extends utils.Adapter {
 	// 	}
 	// }
 
-
 	// Login to charge amps cloud service
 	async chargeampsLogin(email, password, apiKey) {
 		adapter.log.debug("Login to Chage Amps");
@@ -160,24 +150,22 @@ class Chargeamps extends utils.Adapter {
 				request(options, (error, response, body) => {
 					adapter.log.debug("Response:" + JSON.stringify(response));
 					adapter.log.debug("Body:" + JSON.stringify(body));
-					if(error) reject(error);
+					if (error) reject(error);
 					adapter.statuscode = response.statusCode;
-					if(adapter.statuscode == 200) {
+					if (adapter.statuscode == 200) {
 						adapter.token = body.token;
 						adapter.apiKey = apiKey;
 						adapter.logged_in = true;
 						adapter.chargeampsGetOwnedChargepoints();
 						resolve(true);
-					}
-					else {
+					} else {
 						adapter.logged_in = false;
 						adapter.log.error("Login failed");
 						adapter.log.error("Statuscode: " + adapter.statuscode);
 						resolve(false);
 					}
 				});
-			}
-			catch (error) {
+			} catch (error) {
 				adapter.log.error(error);
 				resolve(false);
 			}
@@ -189,7 +177,7 @@ class Chargeamps extends utils.Adapter {
 		adapter.log.debug("SaveValues");
 
 		try {
-			let keys = Object.getOwnPropertyNames(obj);
+			const keys = Object.getOwnPropertyNames(obj);
 
 			adapter.setObjectNotExistsAsync(key, {
 				type: "folder",
@@ -201,31 +189,27 @@ class Chargeamps extends utils.Adapter {
 			});
 
 			let v;
-			for(let i = 0; i < keys.length; i++) {
-				if(obj[keys[i]] != null && obj[keys[i]] != undefined) {
-					if(typeof obj[keys[i]] === 'object') {
+			for (let i = 0; i < keys.length; i++) {
+				if (obj[keys[i]] != null && obj[keys[i]] != undefined) {
+					if (typeof obj[keys[i]] === "object") {
 						adapter.log.debug("Object found");
 						adapter.SaveValues(key + "." + keys[i], obj[keys[i]]);
-					}
-					else {
+					} else {
 						let type = "";
-						if(isNaN(obj[keys[i]])) {
-							type = "string"
+						if (isNaN(obj[keys[i]])) {
+							type = "string";
 							v = obj[keys[i]];
-						}
-						else if(typeof obj[keys[i]] == "boolean") {
+						} else if (typeof obj[keys[i]] == "boolean") {
 							type = "boolean";
-							if(obj[keys[i]] === 'true') {
+							if (obj[keys[i]] === "true") {
 								v = true;
-							}
-							else {
+							} else {
 								v = false;
 							}
-						}
-						else {
-							type = "number"
+						} else {
+							type = "number";
 							v = parseFloat(obj[keys[i]]);
-						};
+						}
 
 						adapter.log.debug("Key: " + keys[i] + ", Value: " + obj[keys[i]] + ", Type: " + type);
 						await adapter.setObjectNotExistsAsync(key + "." + keys[i], {
@@ -241,13 +225,12 @@ class Chargeamps extends utils.Adapter {
 						});
 						adapter.setState(key + "." + keys[i], {
 							val: v,
-							ack: true
+							ack: true,
 						});
 					}
 				}
 			}
-		}
-		catch (error) {
+		} catch (error) {
 			adapter.log.error(error);
 		}
 	}
@@ -256,19 +239,18 @@ class Chargeamps extends utils.Adapter {
 	async RefreshChargepoints() {
 		try {
 			adapter.log.debug("RefreshChargepoints");
-			if(adapter.logged_in) {
+			if (adapter.logged_in) {
 				adapter.log.debug("Chargepoints: " + adapter.chargepoints.length);
-				for(let x = 0; x < adapter.chargepoints.length; x++) {
+				for (let x = 0; x < adapter.chargepoints.length; x++) {
 					await adapter.chargeampsGetChargepointStatus(adapter.chargepoints[x]);
-					if(adapter.statuscode == 401) {
+					if (adapter.statuscode == 401) {
 						adapter.log.debug("Token expired, refreshing");
 						adapter.logged_in = false;
-						var result = await adapter.chargeampsLogin(adapter.email, adapter.password, adapter.apiKey);
+						const result = await adapter.chargeampsLogin(adapter.email, adapter.password, adapter.apiKey);
 					}
 				}
 			}
-		}
-		catch (error) {
+		} catch (error) {
 			adapter.log.error(error);
 		}
 	}
@@ -292,29 +274,107 @@ class Chargeamps extends utils.Adapter {
 				adapter.statuscode = response.statusCode;
 				adapter.log.debug("Statuscode: " + adapter.statuscode);
 				adapter.log.debug("Response:" + JSON.stringify(response));
-				if(adapter.statuscode == 200) {
+				if (adapter.statuscode == 200) {
 					adapter.log.debug("Body: " + JSON.stringify(body));
 					adapter.log.debug("Chargepoints:" + body.length);
 
 					// Refresh chargepoints
 					adapter.chargepoints = [];
-					for(let x = 0; x < body.length; x++) {
+					for (let x = 0; x < body.length; x++) {
 						adapter.chargepoints.push(body[x].id);
 						adapter.SaveValues(body[x].name, body[x]);
+						adapter.CreateControlStates(body[x].name);
 						adapter.chargeampsGetChargepointSettings(body[x].id);
 						adapter.chargeampsGetChargepointStatus(body[x].id);
 						adapter.chargeampsGetChargepointSchedules(body[x].id);
 						adapter.chargeampsGetChargepointChargingSessions(body[x].id);
-						for(let y = 0; y < body[x].connectors.length; y++) {
+						for (let y = 0; y < body[x].connectors.length; y++) {
 							adapter.chargeampsGetConnectorSettings(body[x].id, body[x].connectors[y].connectorId);
 						}
 					}
 				}
 			});
-		}
-		catch (error) {
+		} catch (error) {
 			adapter.log.error(error);
 		}
+	}
+
+	async CreateControlStates(id) {
+		// Create dummy control objects
+		adapter.setObjectNotExistsAsync(id + ".Control", {
+			type: "folder",
+			common: {
+				name: "Control",
+				read: true,
+				write: true,
+				type: "folder",
+			},
+			native: {},
+		});
+		adapter.setObjectNotExistsAsync(id + ".Control.Reboot", {
+			type: "state",
+			common: {
+				name: "Reboot",
+				role: "value",
+				read: true,
+				write: true,
+				type: "boolean",
+			},
+			native: {},
+		});
+		adapter.setState(id + ".Control.Reboot", { val: false, ack: true });
+		adapter.setObjectNotExistsAsync(id + ".Control.RemoteStart", {
+			type: "state",
+			common: {
+				name: "Reboot",
+				role: "value",
+				read: true,
+				write: true,
+				type: "boolean",
+			},
+			native: {},
+		});
+		adapter.setState(id + ".Control.RemoteStart", { val: false, ack: true });
+		adapter.setObjectNotExistsAsync(id + ".Control.RemoteStop", {
+			type: "state",
+			common: {
+				name: "Reboot",
+				role: "value",
+				read: true,
+				write: true,
+				type: "boolean",
+			},
+			native: {},
+		});
+		adapter.setState(id + ".Control.RemoteStop", { val: false, ack: true });
+		adapter.setObjectNotExistsAsync(id + ".EnableCallbacks", {
+			type: "state",
+			common: {
+				name: "Reboot",
+				role: "value",
+				read: true,
+				write: true,
+				type: "boolean",
+			},
+			native: {},
+		});
+		adapter.setState(id + ".Control.EnableCallbacks", { val: false, ack: true });
+		adapter.setObjectNotExistsAsync(id + ".DisableCallbacks", {
+			type: "state",
+			common: {
+				name: "Reboot",
+				role: "value",
+				read: true,
+				write: true,
+				type: "boolean",
+			},
+			native: {},
+		});
+		adapter.setState(id + ".Control.DisableCallbacks", { val: false, ack: true });
+	}
+
+	async reboot() {
+		adapter.log.info("Rebooting chargepoint");
 	}
 
 	// Get connector settings
@@ -323,7 +383,12 @@ class Chargeamps extends utils.Adapter {
 			adapter.log.debug("chargeampsGetConnectorSettings");
 			const options = {
 				method: "GET",
-				url: "https://eapi.charge.space/api/v4/chargepoints/" + chargepointId + "/connectors/" + connectorId + "/settings",
+				url:
+					"https://eapi.charge.space/api/v4/chargepoints/" +
+					chargepointId +
+					"/connectors/" +
+					connectorId +
+					"/settings",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
@@ -336,13 +401,12 @@ class Chargeamps extends utils.Adapter {
 				adapter.statuscode = response.statusCode;
 				adapter.log.debug("Statuscode: " + adapter.statuscode);
 				adapter.log.debug("Response:" + JSON.stringify(response));
-				if(adapter.statuscode == 200) {
+				if (adapter.statuscode == 200) {
 					adapter.log.debug("Body: " + JSON.stringify(body));
 					adapter.SaveValues(chargepointId + ".connectors.settings." + connectorId, body);
 				}
 			});
-		}
-		catch (error) {
+		} catch (error) {
 			adapter.log.error(error);
 		}
 	}
@@ -366,13 +430,12 @@ class Chargeamps extends utils.Adapter {
 				adapter.statuscode = response.statusCode;
 				adapter.log.debug("Statuscode: " + adapter.statuscode);
 				adapter.log.debug("Response:" + JSON.stringify(response));
-				if(adapter.statuscode == 200) {
+				if (adapter.statuscode == 200) {
 					adapter.log.debug("Body: " + JSON.stringify(body));
 					adapter.SaveValues(id + ".settings", body);
 				}
 			});
-		}
-		catch (error) {
+		} catch (error) {
 			adapter.log.error(error);
 		}
 	}
@@ -396,15 +459,14 @@ class Chargeamps extends utils.Adapter {
 				adapter.statuscode = response.statusCode;
 				adapter.log.debug("Statuscode: " + adapter.statuscode);
 				adapter.log.debug("Response:" + JSON.stringify(response));
-				if(adapter.statuscode == 200) {
+				if (adapter.statuscode == 200) {
 					adapter.log.debug("Body: " + JSON.stringify(body));
-					for(let x = 0; x < body.length; x++) {
+					for (let x = 0; x < body.length; x++) {
 						adapter.SaveValues(id + ".schedules." + body[x].id, body[x]);
 					}
 				}
 			});
-		}
-		catch (error) {
+		} catch (error) {
 			adapter.log.error(error);
 		}
 	}
@@ -427,12 +489,10 @@ class Chargeamps extends utils.Adapter {
 
 			// To prevent syncing all charging sessions, we only sync from Last Sync Date
 			adapter.getStateAsync(id + ".chargingsessions.LastSyncDate", function (err, state) {
-
-				if(state == null) {
+				if (state == null) {
 					// If no last sync date is set, we set it to 1st of January 2000
 					adapter.LastSyncDate = "2000-01-01T00:00:00.000Z";
-				}
-				else {
+				} else {
 					// Get stored date
 					adapter.LastSyncDate = state.val;
 				}
@@ -440,7 +500,11 @@ class Chargeamps extends utils.Adapter {
 
 				const options = {
 					method: "GET",
-					url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/chargingsessions?startTime=" + adapter.LastSyncDate,
+					url:
+						"https://eapi.charge.space/api/v4/chargepoints/" +
+						id +
+						"/chargingsessions?startTime=" +
+						adapter.LastSyncDate,
 					headers: {
 						"Content-Type": "application/json",
 						apiKey: adapter.apiKey,
@@ -454,12 +518,12 @@ class Chargeamps extends utils.Adapter {
 					adapter.statuscode = response.statusCode;
 					adapter.log.debug("chargeampsGetChargepointChargingSessions: Statuscode: " + adapter.statuscode);
 					adapter.log.debug("chargeampsGetChargepointChargingSessions: Response:" + JSON.stringify(response));
-					if(adapter.statuscode == 200) {
+					if (adapter.statuscode == 200) {
 						adapter.log.debug("Body: " + JSON.stringify(body));
 
 						// Get latest charging session date
-						for(let x = 0; x < body.length; x++) {
-							if(adapter.LastSyncDate < new Date(body[x].startTime)) {
+						for (let x = 0; x < body.length; x++) {
+							if (adapter.LastSyncDate < new Date(body[x].startTime)) {
 								adapter.LastSyncDate = new Date(body[x].startTime);
 							}
 						}
@@ -479,19 +543,16 @@ class Chargeamps extends utils.Adapter {
 
 						adapter.setState(id + ".chargingsessions.LastSyncDate", {
 							val: adapter.LastSyncDate,
-							ack: true
+							ack: true,
 						});
 					}
 
-					for(let x = 0; x < body.length; x++) {
+					for (let x = 0; x < body.length; x++) {
 						adapter.SaveValues(id + ".chargingsessions." + body[x].id, body[x]);
 					}
 				});
-
-
 			});
-		}
-		catch (error) {
+		} catch (error) {
 			adapter.log.error(error);
 		}
 	}
@@ -515,52 +576,56 @@ class Chargeamps extends utils.Adapter {
 				statuscode = response.statusCode;
 				adapter.log.debug("Statuscode: " + adapter.statuscode);
 				adapter.log.debug("Response:" + JSON.stringify(response));
-				if(adapter.statuscode == 200) {
+				if (adapter.statuscode == 200) {
 					adapter.log.debug("Body: " + JSON.stringify(body));
-					for(let x = 0; x < body.connectorStatuses.length; x++) {
-						let ChargePointId = body.connectorStatuses[x].chargePointId;
-						let ConnectorId = body.connectorStatuses[x].connectorId;
-						if(body.connectorStatuses[x].measurements == null) {
-
+					for (let x = 0; x < body.connectorStatuses.length; x++) {
+						const ChargePointId = body.connectorStatuses[x].chargePointId;
+						const ConnectorId = body.connectorStatuses[x].connectorId;
+						if (body.connectorStatuses[x].measurements == null) {
 							// If no measurements exists, set all values to 0 to reflect end of charging
 							adapter.log.debug("No measurements, set to 0");
 							body.connectorStatuses[x].measurements = [];
 							body.connectorStatuses[x].measurements.push({
-								"phase": "L1",
-								"current": "0",
-								"voltage": "0"
+								phase: "L1",
+								current: "0",
+								voltage: "0",
 							});
 							body.connectorStatuses[x].measurements.push({
-								"phase": "L2",
-								"current": "0",
-								"voltage": "0"
+								phase: "L2",
+								current: "0",
+								voltage: "0",
 							});
 							body.connectorStatuses[x].measurements.push({
-								"phase": "L3",
-								"current": "0",
-								"voltage": "0"
+								phase: "L3",
+								current: "0",
+								voltage: "0",
 							});
 						}
-						adapter.log.debug("Save values :" + body.connectorStatuses[x].measurements[0].current + " / " + body.connectorStatuses[x].measurements[1].current + " / " + +body.connectorStatuses[x].measurements[2].current);
+						adapter.log.debug(
+							"Save values :" +
+								body.connectorStatuses[x].measurements[0].current +
+								" / " +
+								body.connectorStatuses[x].measurements[1].current +
+								" / " +
+								+body.connectorStatuses[x].measurements[2].current,
+						);
 						adapter.SaveValues(id + ".connectors.status." + ConnectorId, body.connectorStatuses[x]);
 					}
 				}
 			});
-		}
-		catch (error) {
+		} catch (error) {
 			adapter.log.error(error);
 		}
 	}
 }
 
-if(require.main !== module) {
+if (require.main !== module) {
 	// Export the constructor in compact mode
 	/**
 	 * @param {Partial<utils.AdapterOptions>} [options={}]
 	 */
 	module.exports = (options) => new Chargeamps(options);
-}
-else {
+} else {
 	// otherwise start the instance directly
 	new Chargeamps();
 }
