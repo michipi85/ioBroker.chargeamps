@@ -113,20 +113,25 @@ class Chargeamps extends utils.Adapter {
 					switch (tmp[tmp.length - 1].split("_")[0]) {
 						case "Reboot":
 							if (state.val == true) adapter.chargeampsReboot(tmp[2]);
+							adapter.setState(id, false, true);
 							break;
 						case "RemoteStart":
 							if (state.val == true)
 								adapter.chargeampsRemoteStart(tmp[2], tmp[tmp.length - 1].split("_")[1]);
+							adapter.setState(id, false, true);
 							break;
 						case "RemoteStop":
 							if (state.val == true)
 								adapter.chargeampsRemoteStop(tmp[2], tmp[tmp.length - 1].split("_")[1]);
+							adapter.setState(id, false, true);
 							break;
 						case "EnableCallbacks":
 							if (state.val == true) adapter.chargeampsEnableCallbacks();
+							adapter.setState(id, false, true);
 							break;
 						case "DisableCallbacks":
 							if (state.val == true) adapter.chargeampsDisableCallbacks();
+							adapter.setState(id, false, true);
 							break;
 					}
 			}
