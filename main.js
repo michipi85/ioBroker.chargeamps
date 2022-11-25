@@ -523,10 +523,10 @@ class Chargeamps extends utils.Adapter {
 					read: true,
 					write: true,
 					type: "boolean",
+					def: "false",
 				},
 				native: {},
 			});
-			await adapter.setState(chargerId + ".Control.Reboot", { val: false, ack: true });
 			await adapter.setObjectNotExistsAsync(chargerId + ".Control.EnableCallbacks", {
 				type: "state",
 				common: {
@@ -535,10 +535,10 @@ class Chargeamps extends utils.Adapter {
 					read: true,
 					write: true,
 					type: "boolean",
+					def: "false",
 				},
 				native: {},
 			});
-			await adapter.setState(chargerId + ".Control.EnableCallbacks", { val: false, ack: true });
 			await adapter.setObjectNotExistsAsync(chargerId + ".Control.DisableCallbacks", {
 				type: "state",
 				common: {
@@ -547,10 +547,10 @@ class Chargeamps extends utils.Adapter {
 					read: true,
 					write: true,
 					type: "boolean",
+					def: "false",
 				},
 				native: {},
 			});
-			await adapter.setState(chargerId + ".Control.DisableCallbacks", { val: false, ack: true });
 		} else {
 			await adapter.setObjectNotExistsAsync(chargerId + ".Control.RemoteStart_" + connectorId, {
 				type: "state",
@@ -560,10 +560,10 @@ class Chargeamps extends utils.Adapter {
 					read: true,
 					write: true,
 					type: "boolean",
+					def: "false",
 				},
 				native: {},
 			});
-			await adapter.setState(chargerId + ".Control.RemoteStart_" + connectorId, { val: false, ack: true });
 			await adapter.setObjectNotExistsAsync(chargerId + ".Control.RemoteStop_" + connectorId, {
 				type: "state",
 				common: {
@@ -572,10 +572,10 @@ class Chargeamps extends utils.Adapter {
 					read: true,
 					write: true,
 					type: "boolean",
+					def: "false",
 				},
 				native: {},
 			});
-			await adapter.setState(chargerId + ".Control.RemoteStop_" + connectorId, { val: false, ack: true });
 			await adapter.setObjectNotExistsAsync(chargerId + ".Control.rfidLength_" + connectorId, {
 				type: "state",
 				common: {
@@ -584,10 +584,10 @@ class Chargeamps extends utils.Adapter {
 					read: true,
 					write: true,
 					type: "number",
+					def: "0",
 				},
 				native: {},
 			});
-			await adapter.setState(chargerId + ".Control.rfidLength_" + connectorId, { val: false, ack: true });
 			await adapter.setObjectNotExistsAsync(chargerId + ".Control.rfidFormat_" + connectorId, {
 				type: "state",
 				common: {
@@ -600,7 +600,6 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setState(chargerId + ".Control.rfidFormat_" + connectorId, { val: "Hex", ack: true });
 			await adapter.setObjectNotExistsAsync(chargerId + ".Control.rfid_" + connectorId, {
 				type: "state",
 				common: {
@@ -613,7 +612,6 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setState(chargerId + ".Control.rfid_" + connectorId, { val: "", ack: true });
 			await adapter.setObjectNotExistsAsync(chargerId + ".Control.externalTransactionId_" + connectorId, {
 				type: "state",
 				common: {
@@ -626,7 +624,6 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setState(chargerId + ".Control.externalTransactionId_" + connectorId, { val: "", ack: true });
 		}
 	}
 
