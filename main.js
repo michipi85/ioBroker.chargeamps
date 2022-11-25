@@ -47,7 +47,7 @@ class Chargeamps extends utils.Adapter {
 		adapter.log.debug("api-key:" + this.config.apikey);
 		adapter.RefreshInterval = this.config.Interval;
 		adapter.log.info("Refresh Interval: " + adapter.RefreshInterval);
-		adapter.subscribeStates("*");
+		adapter.subscribeStates("chargeamps.0.2103029273M.Control.*");
 
 		await adapter.chargeampsLogin(this.config.email, this.config.password, this.config.apikey).then(() => {
 			adapter.log.debug("Started Charge Amps Adapter and logged in successfully");
@@ -103,7 +103,33 @@ class Chargeamps extends utils.Adapter {
 	onStateChange(id, state) {
 		if (state) {
 			// The state was changed
-			// adapter.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
+			adapter.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
+			const tmp = id.split(".");
+			adapter.log.info("Command? : " + tmp[tmp.length - 2]);
+			adapter.log.info("Setting? : " + tmp[tmp.length - 1]);
+			adapter.log.info("Adapter: " + tmp[2]);
+			switch (tmp[tmp.length - 2]) {
+				case "Control":
+					switch (tmp[tmp.length - 1].split("_")[0]) {
+						case "Reboot":
+							if (state.val == true) adapter.chargeampsReboot(tmp[2]);
+							break;
+						case "RemoteStart":
+							if (state.val == true)
+								adapter.chargeampsRemoteStart(tmp[2], tmp[tmp.length - 1].split("_")[1]);
+							break;
+						case "RemoteStop":
+							if (state.val == true)
+								adapter.chargeampsRemoteStop(tmp[2], tmp[tmp.length - 1].split("_")[1]);
+							break;
+						case "EnableCallbacks":
+							if (state.val == true) adapter.chargeampsEnableCallbacks();
+							break;
+						case "DisableCallbacks":
+							if (state.val == true) adapter.chargeampsDisableCallbacks();
+							break;
+					}
+			}
 		} else {
 			// The state was deleted
 			// adapter.log.info(`state ${id} deleted`);
@@ -170,6 +196,181 @@ class Chargeamps extends utils.Adapter {
 				resolve(false);
 			}
 		});
+	}
+
+	async chargeampsReboot(chargepointId) {
+		adapter.log.info("Reboot Chargepoint " + chargepointId);
+		try {
+			const options = {
+				method: "PUT",
+				url: "https://eapi.charge.space/api/v4/chargepoints/" + chargepointId + "/reboot",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: adapter.apiKey,
+					Authorization: "Bearer " + adapter.token,
+				},
+				json: true,
+			};
+			adapter.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				adapter.statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if (response.statusCode == 200) {
+					adapter.log.debug("Reboot successful");
+				} else {
+					adapter.log.error("Reboot failed");
+				}
+			});
+		} catch (error) {
+			adapter.log.error(error);
+		}
+	}
+
+	async chargeampsRemoteStart(chargepointId, connectorId) {
+		adapter.log.info("Remote Start Chargepoint " + chargepointId, connectorId);
+
+		// Get RFID settings
+		const _rfidLength = await adapter.getStateAsync(chargepointId + ".Control.rfidLength_" + connectorId);
+		const _rfidFormat = await adapter.getStateAsync(chargepointId + ".Control.rfidFormat_" + connectorId);
+		const _rfid = await adapter.getStateAsync(chargepointId + ".Control.rfid_" + connectorId);
+		const _externalTransactionId = await adapter.getStateAsync(
+			chargepointId + ".Control.externalTransactionId_" + connectorId,
+		);
+
+		adapter.log.debug("RfidLength: " + _rfidLength.val);
+		adapter.log.debug("RfidFormat: " + _rfidFormat.val);
+		adapter.log.debug("Rfid: " + _rfid.val);
+		adapter.log.debug("ExternalTransactionId: " + _externalTransactionId.val);
+
+		try {
+			const options = {
+				method: "PUT",
+				url:
+					"https://eapi.charge.space/api/v4/chargepoints/" +
+					chargepointId +
+					"/connectors/" +
+					connectorId +
+					"/remotestart",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: adapter.apiKey,
+					Authorization: "Bearer " + adapter.token,
+				},
+				body: {
+					rfidLength: _rfidLength.val,
+					rfidFormat: _rfidFormat.val,
+					rfid: _rfid.val,
+					externalTransactionId: _externalTransactionId.val,
+				},
+				json: true,
+			};
+			adapter.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				adapter.statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if (response.statusCode == 200) {
+					adapter.log.debug("Remote Stop successful");
+				} else {
+					adapter.log.error("Remote stop failed, probably still charging");
+				}
+			});
+		} catch (error) {
+			adapter.log.error(error);
+		}
+	}
+
+	async chargeampsRemoteStop(chargepointId, connectorId) {
+		adapter.log.info("Remote Stop Chargepoint " + chargepointId + " Connector " + connectorId);
+		try {
+			const options = {
+				method: "PUT",
+				url:
+					"https://eapi.charge.space/api/v4/chargepoints/" +
+					chargepointId +
+					"/connectors/" +
+					connectorId +
+					"/remotestop",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: adapter.apiKey,
+					Authorization: "Bearer " + adapter.token,
+				},
+				json: true,
+			};
+			adapter.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				adapter.statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if (response.statusCode == 200) {
+					adapter.log.debug("Remote Stop successful");
+				} else {
+					adapter.log.error("Remote stop failed, probably still charging");
+				}
+			});
+		} catch (error) {
+			adapter.log.error(error);
+		}
+	}
+
+	async chargeampsEnableCallbacks() {
+		adapter.log.info("Enable Callbacks");
+		try {
+			const options = {
+				method: "PUT",
+				url: "https://eapi.charge.space/api/v4/chargepoints/callbacks/enable",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: adapter.apiKey,
+					Authorization: "Bearer " + adapter.token,
+				},
+				json: true,
+			};
+			adapter.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				adapter.statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if (response.statusCode == 200) {
+					adapter.log.debug("Enable callbacks successful");
+				} else {
+					adapter.log.error("Enable callbacks failed");
+				}
+			});
+		} catch (error) {
+			adapter.log.error(error);
+		}
+	}
+
+	async chargeampsDisableCallbacks() {
+		adapter.log.info("Disable Callbacks");
+		try {
+			const options = {
+				method: "PUT",
+				url: "https://eapi.charge.space/api/v4/chargepoints/callbacks/disable",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: adapter.apiKey,
+					Authorization: "Bearer " + adapter.token,
+				},
+				json: true,
+			};
+			adapter.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				adapter.statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if (response.statusCode == 200) {
+					adapter.log.debug("Disable callbacks successful");
+				} else {
+					adapter.log.error("Disable callbacks failed");
+				}
+			});
+		} catch (error) {
+			adapter.log.error(error);
+		}
 	}
 
 	// Serialize objects into iobroker states
@@ -283,13 +484,14 @@ class Chargeamps extends utils.Adapter {
 					for (let x = 0; x < body.length; x++) {
 						adapter.chargepoints.push(body[x].id);
 						adapter.SaveValues(body[x].name, body[x]);
-						adapter.CreateControlStates(body[x].name);
+						adapter.CreateControlStates(body[x].name, "");
 						adapter.chargeampsGetChargepointSettings(body[x].id);
 						adapter.chargeampsGetChargepointStatus(body[x].id);
 						adapter.chargeampsGetChargepointSchedules(body[x].id);
 						adapter.chargeampsGetChargepointChargingSessions(body[x].id);
 						for (let y = 0; y < body[x].connectors.length; y++) {
 							adapter.chargeampsGetConnectorSettings(body[x].id, body[x].connectors[y].connectorId);
+							adapter.CreateControlStates(body[x].name, body[x].connectors[y].connectorId);
 						}
 					}
 				}
@@ -299,78 +501,133 @@ class Chargeamps extends utils.Adapter {
 		}
 	}
 
-	async CreateControlStates(id) {
+	async CreateControlStates(chargerId, connectorId) {
 		// Create dummy control objects
-		await adapter.setObjectNotExistsAsync(id + ".Control", {
-			type: "folder",
-			common: {
-				name: "Control",
-				read: true,
-				write: true,
+
+		if (connectorId == "") {
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control", {
 				type: "folder",
-			},
-			native: {},
-		});
-		await adapter.setObjectNotExistsAsync(id + ".Control.Reboot", {
-			type: "state",
-			common: {
-				name: "Reboot",
-				role: "value",
-				read: true,
-				write: true,
-				type: "boolean",
-			},
-			native: {},
-		});
-		await adapter.setState(id + ".Control.Reboot", { val: false, ack: true });
-		await adapter.setObjectNotExistsAsync(id + ".Control.RemoteStart", {
-			type: "state",
-			common: {
-				name: "Reboot",
-				role: "value",
-				read: true,
-				write: true,
-				type: "boolean",
-			},
-			native: {},
-		});
-		await adapter.setState(id + ".Control.RemoteStart", { val: false, ack: true });
-		await adapter.setObjectNotExistsAsync(id + ".Control.RemoteStop", {
-			type: "state",
-			common: {
-				name: "Reboot",
-				role: "value",
-				read: true,
-				write: true,
-				type: "boolean",
-			},
-			native: {},
-		});
-		await adapter.setState(id + ".Control.RemoteStop", { val: false, ack: true });
-		await adapter.setObjectNotExistsAsync(id + ".Control.EnableCallbacks", {
-			type: "state",
-			common: {
-				name: "Reboot",
-				role: "value",
-				read: true,
-				write: true,
-				type: "boolean",
-			},
-			native: {},
-		});
-		await adapter.setState(id + ".Control.EnableCallbacks", { val: false, ack: true });
-		await adapter.setObjectNotExistsAsync(id + ".Control.DisableCallbacks", {
-			type: "state",
-			common: {
-				name: "Reboot",
-				role: "value",
-				read: true,
-				write: true,
-				type: "boolean",
-			},
-			native: {},
-		});
-		await adapter.setState(id + ".Control.DisableCallbacks", { val: false, ack: true });
+				common: {
+					name: "Control",
+					read: true,
+					write: true,
+					type: "folder",
+				},
+				native: {},
+			});
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control.Reboot", {
+				type: "state",
+				common: {
+					name: "Reboot",
+					role: "value",
+					read: true,
+					write: true,
+					type: "boolean",
+				},
+				native: {},
+			});
+			await adapter.setState(chargerId + ".Control.Reboot", { val: false, ack: true });
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control.EnableCallbacks", {
+				type: "state",
+				common: {
+					name: "Reboot",
+					role: "value",
+					read: true,
+					write: true,
+					type: "boolean",
+				},
+				native: {},
+			});
+			await adapter.setState(chargerId + ".Control.EnableCallbacks", { val: false, ack: true });
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control.DisableCallbacks", {
+				type: "state",
+				common: {
+					name: "Reboot",
+					role: "value",
+					read: true,
+					write: true,
+					type: "boolean",
+				},
+				native: {},
+			});
+			await adapter.setState(chargerId + ".Control.DisableCallbacks", { val: false, ack: true });
+		} else {
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control.RemoteStart_" + connectorId, {
+				type: "state",
+				common: {
+					name: "Reboot",
+					role: "value",
+					read: true,
+					write: true,
+					type: "boolean",
+				},
+				native: {},
+			});
+			await adapter.setState(chargerId + ".Control.RemoteStart_" + connectorId, { val: false, ack: true });
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control.RemoteStop_" + connectorId, {
+				type: "state",
+				common: {
+					name: "Reboot",
+					role: "value",
+					read: true,
+					write: true,
+					type: "boolean",
+				},
+				native: {},
+			});
+			await adapter.setState(chargerId + ".Control.RemoteStop_" + connectorId, { val: false, ack: true });
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control.rfidLength_" + connectorId, {
+				type: "state",
+				common: {
+					name: "Reboot",
+					role: "value",
+					read: true,
+					write: true,
+					type: "number",
+				},
+				native: {},
+			});
+			await adapter.setState(chargerId + ".Control.rfidLength_" + connectorId, { val: false, ack: true });
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control.rfidFormat_" + connectorId, {
+				type: "state",
+				common: {
+					name: "Reboot",
+					role: "value",
+					read: true,
+					write: true,
+					type: "string",
+					def: "Hex",
+				},
+				native: {},
+			});
+			await adapter.setState(chargerId + ".Control.rfidFormat_" + connectorId, { val: "Hex", ack: true });
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control.rfid_" + connectorId, {
+				type: "state",
+				common: {
+					name: "Reboot",
+					role: "value",
+					read: true,
+					write: true,
+					type: "string",
+					def: "",
+				},
+				native: {},
+			});
+			await adapter.setState(chargerId + ".Control.rfid_" + connectorId, { val: "", ack: true });
+			await adapter.setObjectNotExistsAsync(chargerId + ".Control.externalTransactionId_" + connectorId, {
+				type: "state",
+				common: {
+					name: "Reboot",
+					role: "value",
+					read: true,
+					write: true,
+					type: "string",
+					def: "",
+				},
+				native: {},
+			});
+			await adapter.setState(chargerId + ".Control.externalTransactionId_" + connectorId, { val: "", ack: true });
+		}
 	}
 
 	async reboot() {
