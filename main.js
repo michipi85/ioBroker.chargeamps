@@ -107,7 +107,7 @@ class Chargeamps extends utils.Adapter {
 			adapter.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
 			const tmp = id.split(".");
 			adapter.log.info("Command? : " + tmp[tmp.length - 2]);
-			adapter.log.info("Setting? : " + tmp[tmp.length - 1]);
+			adapter.log.info("Setting? : " + tmp[tmp.length - 1]) + "     Action: " + tmp[tmp.length - 1].split("_")[0]);
 			adapter.log.info("Adapter: " + tmp[2]);
 			switch (tmp[tmp.length - 2]) {
 				case "Control":
@@ -134,6 +134,8 @@ class Chargeamps extends utils.Adapter {
 							if (state.val == true) adapter.chargeampsDisableCallbacks();
 							adapter.setState(id, false, true);
 							break;
+						default:
+							adapter.log.info("Unknown command: " + tmp[tmp.length - 1].split("_")[0]);
 					}
 			}
 		} else {
