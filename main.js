@@ -48,7 +48,7 @@ class Chargeamps extends utils.Adapter {
 		adapter.log.debug("api-key:" + this.config.apikey);
 		adapter.RefreshInterval = this.config.Interval;
 		adapter.log.info("Refresh Interval: " + adapter.RefreshInterval);
-		adapter.subscribeStates("chargeamps.0.2209067078M.Control.*");
+		adapter.subscribeStates("chargeamps.0.2209067078M.*");
 
 		await adapter.chargeampsLogin(this.config.email, this.config.password, this.config.apikey).then(() => {
 			adapter.log.debug("Started Charge Amps Adapter and logged in successfully");
