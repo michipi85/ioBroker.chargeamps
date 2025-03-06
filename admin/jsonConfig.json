@@ -5,22 +5,34 @@
 		"email": {
 			"type": "text",
 			"label": "E-Mail",
-			"newLine": true
+			"newLine": true,
+			"sm": 6,
+          		"md": 4,
+          		"lg": 2
 		},
 		"password": {
 			"type": "text",
 			"label": "Password",
-			"newLine": true
+			"newLine": true,
+			"sm": 6,
+          		"md": 4,
+          		"lg": 2
 		},
 		"apikey": {
 			"type": "text",
 			"label": "API-Key",
-			"newLine": true
+			"newLine": true,
+			"sm": 6,
+          		"md": 4,
+          		"lg": 2
 		},
 		"Interval": {
 			"type": "text",
 			"label": "Refresh Interval",
-			"newLine": true
+			"newLine": true,
+			"sm": 6,
+          		"md": 4,
+          		"lg": 2
 		}
 	}
 }
