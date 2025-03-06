@@ -20,6 +20,7 @@ const logged_in = false;
 let LastSyncDate;
 let adapter;
 const RefreshInterval = 30;
+let urlString = 'https://eapi.charge.space/api/v5/' ;
 
 class Chargeamps extends utils.Adapter {
 	/**
@@ -47,7 +48,7 @@ class Chargeamps extends utils.Adapter {
 		adapter.log.debug("api-key:" + this.config.apikey);
 		adapter.RefreshInterval = this.config.Interval;
 		adapter.log.info("Refresh Interval: " + adapter.RefreshInterval);
-		adapter.subscribeStates("chargeamps.0.2103029273M.Control.*");
+		adapter.subscribeStates("chargeamps.0.2209067078M.Control.*");
 
 		await adapter.chargeampsLogin(this.config.email, this.config.password, this.config.apikey).then(() => {
 			adapter.log.debug("Started Charge Amps Adapter and logged in successfully");
@@ -166,7 +167,7 @@ class Chargeamps extends utils.Adapter {
 			try {
 				const options = {
 					method: "POST",
-					url: "https://eapi.charge.space/api/v4/auth/login",
+					url: urlString + "auth/login",
 					headers: {
 						"Content-Type": "application/json",
 						apiKey: apiKey,
@@ -208,7 +209,7 @@ class Chargeamps extends utils.Adapter {
 		try {
 			const options = {
 				method: "PUT",
-				url: "https://eapi.charge.space/api/v4/chargepoints/" + chargepointId + "/reboot",
+				url: urlString + "chargepoints/" + chargepointId + "/reboot",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
@@ -252,7 +253,7 @@ class Chargeamps extends utils.Adapter {
 			const options = {
 				method: "PUT",
 				url:
-					"https://eapi.charge.space/api/v4/chargepoints/" +
+					urlString + "chargepoints/" +
 					chargepointId +
 					"/connectors/" +
 					connectorId +
@@ -292,7 +293,7 @@ class Chargeamps extends utils.Adapter {
 			const options = {
 				method: "PUT",
 				url:
-					"https://eapi.charge.space/api/v4/chargepoints/" +
+					urlString + "chargepoints/" +
 					chargepointId +
 					"/connectors/" +
 					connectorId +
@@ -325,7 +326,7 @@ class Chargeamps extends utils.Adapter {
 		try {
 			const options = {
 				method: "PUT",
-				url: "https://eapi.charge.space/api/v4/chargepoints/callbacks/enable",
+				url: urlString + "chargepoints/callbacks/enable",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
@@ -354,7 +355,7 @@ class Chargeamps extends utils.Adapter {
 		try {
 			const options = {
 				method: "PUT",
-				url: "https://eapi.charge.space/api/v4/chargepoints/callbacks/disable",
+				url: urlString + "chargepoints/callbacks/disable",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
@@ -467,7 +468,7 @@ class Chargeamps extends utils.Adapter {
 		try {
 			const options = {
 				method: "GET",
-				url: "https://eapi.charge.space/api/v4/chargepoints/owned",
+				url: urlString + "chargepoints/owned",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
@@ -643,7 +644,7 @@ class Chargeamps extends utils.Adapter {
 			const options = {
 				method: "GET",
 				url:
-					"https://eapi.charge.space/api/v4/chargepoints/" +
+					urlString + "chargepoints/" +
 					chargepointId +
 					"/connectors/" +
 					connectorId +
@@ -676,7 +677,7 @@ class Chargeamps extends utils.Adapter {
 		try {
 			const options = {
 				method: "GET",
-				url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/settings",
+				url: urlString + "chargepoints/" + id + "/settings",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
@@ -705,7 +706,7 @@ class Chargeamps extends utils.Adapter {
 		try {
 			const options = {
 				method: "GET",
-				url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/schedules",
+				url: urlString + "chargepoints/" + id + "/schedules",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
@@ -760,7 +761,7 @@ class Chargeamps extends utils.Adapter {
 				const options = {
 					method: "GET",
 					url:
-						"https://eapi.charge.space/api/v4/chargepoints/" +
+						urlString + "chargepoints/" +
 						id +
 						"/chargingsessions?startTime=" +
 						adapter.LastSyncDate,
@@ -822,7 +823,7 @@ class Chargeamps extends utils.Adapter {
 		try {
 			const options = {
 				method: "GET",
-				url: "https://eapi.charge.space/api/v4/chargepoints/" + id + "/status",
+				url: urlString + "chargepoints/" + id + "/status",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
