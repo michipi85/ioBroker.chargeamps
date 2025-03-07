@@ -6,33 +6,33 @@
 			"type": "text",
 			"label": "E-Mail",
 			"newLine": true,
-			"sm": 6,
-          		"md": 4,
-          		"lg": 2
+			"sm": 12,
+          		"md": 6,
+          		"lg": 6
 		},
 		"password": {
 			"type": "text",
 			"label": "Password",
 			"newLine": true,
-			"sm": 6,
-          		"md": 4,
-          		"lg": 2
+			"sm": 12,
+          		"md": 6,
+          		"lg": 6
 		},
 		"apikey": {
 			"type": "text",
 			"label": "API-Key",
 			"newLine": true,
-			"sm": 6,
-          		"md": 4,
-          		"lg": 2
+			"sm": 12,
+          		"md": 6,
+          		"lg": 6
 		},
 		"Interval": {
 			"type": "text",
 			"label": "Refresh Interval",
 			"newLine": true,
-			"sm": 6,
-          		"md": 4,
-          		"lg": 2
+			"sm": 12,
+          		"md": 6,
+          		"lg": 6
 		}
 	}
 }
