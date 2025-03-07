@@ -48,7 +48,6 @@ class Chargeamps extends utils.Adapter {
 		adapter.log.debug("api-key:" + this.config.apikey);
 		adapter.RefreshInterval = this.config.Interval;
 		adapter.log.info("Refresh Interval: " + adapter.RefreshInterval);
-		adapter.subscribeStates("chargeamps.0.2209067078M.*");
 
 		await adapter.chargeampsLogin(this.config.email, this.config.password, this.config.apikey).then(() => {
 			adapter.log.debug("Started Charge Amps Adapter and logged in successfully");
@@ -59,6 +58,7 @@ class Chargeamps extends utils.Adapter {
 			adapter.log.info("Refresh Interval is too low. Set to 15 seconds");
 		}
 		adapter.refreshIntervalObject = setInterval(adapter.RefreshChargepoints, adapter.RefreshInterval * 1000);
+		adapter.subscribeStates('chargeamps.0.'+ chargePointId +'.settings.*');
 	}
 
 	/**
@@ -205,12 +205,12 @@ class Chargeamps extends utils.Adapter {
 		});
 	}
 
-	async chargeampsReboot(chargepointId) {
-		adapter.log.info("Reboot Chargepoint " + chargepointId);
+	async chargeampsReboot(chargePointId) {
+		adapter.log.info("Reboot Chargepoint " + chargePointId);
 		try {
 			const options = {
 				method: "PUT",
-				url: urlString + "chargepoints/" + chargepointId + "/reboot",
+				url: urlString + "chargepoints/" + chargePointId + "/reboot",
 				headers: {
 					"Content-Type": "application/json",
 					apiKey: adapter.apiKey,
@@ -234,15 +234,15 @@ class Chargeamps extends utils.Adapter {
 		}
 	}
 
-	async chargeampsRemoteStart(chargepointId, connectorId) {
-		adapter.log.info("Remote Start Chargepoint " + chargepointId, connectorId);
+	async chargeampsRemoteStart(chargePointId, connectorId) {
+		adapter.log.info("Remote Start Chargepoint " + chargePointId, connectorId);
 
 		// Get RFID settings
-		const _rfidLength = await adapter.getStateAsync(chargepointId + ".Control.rfidLength_" + connectorId);
-		const _rfidFormat = await adapter.getStateAsync(chargepointId + ".Control.rfidFormat_" + connectorId);
-		const _rfid = await adapter.getStateAsync(chargepointId + ".Control.rfid_" + connectorId);
+		const _rfidLength = await adapter.getStateAsync(chargePointId + ".Control.rfidLength_" + connectorId);
+		const _rfidFormat = await adapter.getStateAsync(chargePointId + ".Control.rfidFormat_" + connectorId);
+		const _rfid = await adapter.getStateAsync(chargePointId + ".Control.rfid_" + connectorId);
 		const _externalTransactionId = await adapter.getStateAsync(
-			chargepointId + ".Control.externalTransactionId_" + connectorId,
+			chargePointId + ".Control.externalTransactionId_" + connectorId,
 		);
 
 		adapter.log.debug("RfidLength: " + _rfidLength.val);
@@ -255,7 +255,7 @@ class Chargeamps extends utils.Adapter {
 				method: "PUT",
 				url:
 					urlString + "chargepoints/" +
-					chargepointId +
+					chargePointId +
 					"/connectors/" +
 					connectorId +
 					"/remotestart",
@@ -288,14 +288,14 @@ class Chargeamps extends utils.Adapter {
 		}
 	}
 
-	async chargeampsRemoteStop(chargepointId, connectorId) {
-		adapter.log.info("Remote Stop Chargepoint " + chargepointId + " Connector " + connectorId);
+	async chargeampsRemoteStop(chargePointId, connectorId) {
+		adapter.log.info("Remote Stop Chargepoint " + chargePointId + " Connector " + connectorId);
 		try {
 			const options = {
 				method: "PUT",
 				url:
 					urlString + "chargepoints/" +
-					chargepointId +
+					chargePointId +
 					"/connectors/" +
 					connectorId +
 					"/remotestop",
@@ -495,7 +495,7 @@ class Chargeamps extends utils.Adapter {
 						adapter.chargeampsGetChargepointSettings(body[x].id);
 						adapter.chargeampsGetChargepointStatus(body[x].id);
 						adapter.chargeampsGetChargepointSchedules(body[x].id);
-						adapter.chargeampsGetChargepointChargingSessions(body[x].id);
+					//	adapter.chargeampsGetChargepointChargingSessions(body[x].id);
 						for (let y = 0; y < body[x].connectors.length; y++) {
 							adapter.chargeampsGetConnectorSettings(body[x].id, body[x].connectors[y].connectorId);
 							adapter.CreateControlStates(body[x].name, body[x].connectors[y].connectorId);
@@ -508,11 +508,11 @@ class Chargeamps extends utils.Adapter {
 		}
 	}
 
-	async CreateControlStates(chargerId, connectorId) {
+	async CreateControlStates(chargePointId, connectorId) {
 		// Create dummy control objects
 
 		if (connectorId == "") {
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control", {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control", {
 				type: "folder",
 				common: {
 					name: "Control",
@@ -522,7 +522,7 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control.Reboot", {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control.Reboot", {
 				type: "state",
 				common: {
 					name: "Reboot",
@@ -534,10 +534,10 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control.EnableCallbacks", {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control.EnableCallbacks", {
 				type: "state",
 				common: {
-					name: "Reboot",
+					name: "Enable Callback",
 					role: "value",
 					read: true,
 					write: true,
@@ -546,10 +546,10 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control.DisableCallbacks", {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control.DisableCallbacks", {
 				type: "state",
 				common: {
-					name: "Reboot",
+					name: "Disable Callback",
 					role: "value",
 					read: true,
 					write: true,
@@ -559,10 +559,11 @@ class Chargeamps extends utils.Adapter {
 				native: {},
 			});
 		} else {
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control.RemoteStart_" + connectorId, {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control.RemoteStart_" + connectorId, {
 				type: "state",
 				common: {
-					name: "Reboot",
+					name: "Remotestart",
+					desc: "Remote start chargepoint. Only makes sense if rfidlock is on",
 					role: "value",
 					read: true,
 					write: true,
@@ -571,10 +572,11 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control.RemoteStop_" + connectorId, {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control.RemoteStop_" + connectorId, {
 				type: "state",
 				common: {
-					name: "Reboot",
+					name: "Remotestop",
+					desc: "Remote stop chargepoint. Only makes sense if rfidlock is on",
 					role: "value",
 					read: true,
 					write: true,
@@ -583,10 +585,10 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control.rfidLength_" + connectorId, {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control.rfidLength_" + connectorId, {
 				type: "state",
 				common: {
-					name: "Reboot",
+					name: "rfidLength",
 					role: "value",
 					read: true,
 					write: true,
@@ -595,10 +597,10 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control.rfidFormat_" + connectorId, {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control.rfidFormat_" + connectorId, {
 				type: "state",
 				common: {
-					name: "Reboot",
+					name: "rfidFormat",
 					role: "value",
 					read: true,
 					write: true,
@@ -607,10 +609,10 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control.rfid_" + connectorId, {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control.rfid_" + connectorId, {
 				type: "state",
 				common: {
-					name: "Reboot",
+					name: "rfid",
 					role: "value",
 					read: true,
 					write: true,
@@ -619,10 +621,10 @@ class Chargeamps extends utils.Adapter {
 				},
 				native: {},
 			});
-			await adapter.setObjectNotExistsAsync(chargerId + ".Control.externalTransactionId_" + connectorId, {
+			await adapter.setObjectNotExistsAsync(chargePointId + ".Control.externalTransactionId_" + connectorId, {
 				type: "state",
 				common: {
-					name: "Reboot",
+					name: "externalTransactionId",
 					role: "value",
 					read: true,
 					write: true,
@@ -639,14 +641,14 @@ class Chargeamps extends utils.Adapter {
 	}
 
 	// Get connector settings
-	async chargeampsGetConnectorSettings(chargepointId, connectorId) {
+	async chargeampsGetConnectorSettings(chargePointId, connectorId) {
 		try {
 			adapter.log.debug("chargeampsGetConnectorSettings");
 			const options = {
 				method: "GET",
 				url:
 					urlString + "chargepoints/" +
-					chargepointId +
+					chargePointId +
 					"/connectors/" +
 					connectorId +
 					"/settings",
@@ -664,7 +666,7 @@ class Chargeamps extends utils.Adapter {
 				adapter.log.debug("Response:" + JSON.stringify(response));
 				if (adapter.statuscode == 200) {
 					adapter.log.debug("Body: " + JSON.stringify(body));
-					adapter.SaveValues(chargepointId + ".connectors.settings." + connectorId, body);
+					adapter.SaveValues(chargePointId + ".connectors.settings." + connectorId, body);
 				}
 			});
 		} catch (error) {
@@ -700,7 +702,47 @@ class Chargeamps extends utils.Adapter {
 			adapter.log.error(error);
 		}
 	}
+	
+	// Put chargepoint settings
+	async chargeampsPutChargepointSettings(chargepointId) {
+		adapter.log.debug("chargeampsPutChargepointSettings");
+		
+		const _dimmer = await this.getStateAsync(chargepointId+ ".settings.dimmer");
+		const _downLight = await this.getStateAsync(chargepointId + ".settings.downLight");
+		const _maxCurrent = await this.getStateAsync(chargepointId + ".settings.maxCurrent");
 
+		try {
+			const options = {
+				method: "PUT",
+				url: urlString +"chargepoints/" + chargepointId + "/settings",
+				headers: {
+					"Content-Type": "application/json",
+					apiKey: this.apiKey,
+					Authorization: "Bearer " + this.token,
+				},
+				body: {
+					dimmer: _dimmer.val,
+					downLight: _downLight.val,
+					maxCurrent: _maxCurrent.val,
+				},
+				json: true,
+			};
+			this.log.debug("Options:" + JSON.stringify(options));
+			request(options, (error, response, body) => {
+				adapter.statuscode = response.statusCode;
+				adapter.log.debug("Statuscode: " + adapter.statuscode);
+				adapter.log.debug("Response:" + JSON.stringify(response));
+				if (adapter.statuscode == 200) {
+					adapter.log.debug("Update chargepoints settings successful");
+				} else {
+					adapter.log.error("Update chargepoints settings failed");
+				}
+			});
+		} catch (error) {
+			adapter.log.error(error);
+		}
+	}
+	
 	// Get chargepoint schedules
 	async chargeampsGetChargepointSchedules(id) {
 		adapter.log.debug("chargeampsGetChargepointSchedules");
@@ -733,6 +775,7 @@ class Chargeamps extends utils.Adapter {
 	}
 
 	// Get chargepoint charging sessions
+/*
 	async chargeampsGetChargepointChargingSessions(id) {
 		adapter.log.debug("chargeampsGetChargepointChargingSessions");
 		try {
@@ -817,7 +860,7 @@ class Chargeamps extends utils.Adapter {
 			adapter.log.error(error);
 		}
 	}
-
+*/
 	// Get Chargepoint status
 	async chargeampsGetChargepointStatus(id) {
 		adapter.log.debug("chargeampsGetChargepointStatus for " + id);
@@ -840,7 +883,7 @@ class Chargeamps extends utils.Adapter {
 				if (adapter.statuscode == 200) {
 					adapter.log.debug("Body: " + JSON.stringify(body));
 					for (let x = 0; x < body.connectorStatuses.length; x++) {
-						const ChargePointId = body.connectorStatuses[x].chargePointId;
+						const chargePointId = body.connectorStatuses[x].chargePointId;
 						const ConnectorId = body.connectorStatuses[x].connectorId;
 						if (body.connectorStatuses[x].measurements == null) {
 							// If no measurements exists, set all values to 0 to reflect end of charging
